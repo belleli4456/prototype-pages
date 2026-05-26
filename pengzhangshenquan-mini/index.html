@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>膨胀神券 - 小程序端原型</title>
+<style>
+  :root {
+    --brand: #ee0a5f;          /* 食亨玫红主色 */
+    --brand-dark: #c8094f;
+    --brand-soft: #fff0f5;
+    --gold: #f59e0b;
+    --gold-light: #fde68a;
+    --danger: #e63b3b;
+    --text: #262626;
+    --muted: #999;
+    --sub: #666;
+    --border: #f0f0f0;
+    --line-dashed: #d8d8d8;
+    --bg-page: #f5f5f7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', sans-serif;
+    background: #e9ebf0;
+    min-height: 100vh;
+    padding: 32px 20px 60px;
+  }
+  .page-title { text-align: center; font-size: 26px; font-weight: 700; color: var(--brand-dark); margin-bottom: 8px; letter-spacing: 2px; }
+  .page-subtitle { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 36px; }
+
+  .mobile-container { display: flex; justify-content: center; gap: 32px; flex-wrap: wrap; max-width: 1800px; margin: 0 auto; }
+  .phone-wrapper { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .phone-label { font-size: 13px; font-weight: 600; color: #555; letter-spacing: 1px; background: #fff; padding: 4px 16px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+  .phone-frame { width: 320px; height: 660px; border-radius: 32px; border: 6px solid #1a1a2e; overflow: hidden; position: relative; background: var(--bg-page); box-shadow: 0 8px 24px rgba(0,0,0,0.15); }
+
+  .page { width: 100%; height: 100%; background: var(--bg-page); overflow: auto; position: relative; }
+
+  /* Status bar */
+  .status-bar { height: 30px; display: flex; justify-content: space-between; align-items: center; padding: 0 18px; font-size: 13px; color: #262626; font-weight: 600; background: #fff; }
+
+  /* Nav bar (小程序) */
+  .nav-bar {
+    height: 44px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    position: relative;
+  }
+  .nav-back { font-size: 22px; color: var(--text); margin-right: 4px; }
+  .nav-title { flex: 1; text-align: center; padding-right: 60px; }
+  .mp-capsule {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    width: 70px;
+    height: 28px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 14px;
+    background: rgba(0,0,0,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    font-size: 14px;
+  }
+  .mp-capsule .dot { color: #888; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    background: #fff;
+  }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    font-size: 15px;
+    color: var(--text);
+    position: relative;
+  }
+  .tab.active {
+    color: var(--brand);
+    font-weight: 600;
+  }
+  .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: 6px; left: 50%;
+    transform: translateX(-50%);
+    width: 28px; height: 3px;
+    background: var(--brand);
+    border-radius: 2px;
+  }
+
+  /* Recommend row (结算页) */
+  .recommend-row {
+    background: #fff;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+  }
+  .recommend-row .check-icon {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--brand);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+
+  /* Coupon list */
+  .coupon-list { padding: 12px 8px 16px; }
+
+  /* Coupon item (食亨真布局：左大字 + 垂直虚线 + 中信息) */
+  .coupon-item {
+    background: #fff;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: relative;
+  }
+  .coupon-main {
+    display: flex;
+    padding: 16px 12px;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    min-height: 88px;
+  }
+  /* 左侧大字金额区 */
+  .coupon-amount {
+    width: 82px;
+    flex-shrink: 0;
+    text-align: center;
+    color: var(--brand);
+    font-weight: 700;
+    position: relative;
+    line-height: 1;
+  }
+  .coupon-amount .num {
+    font-size: 34px;
+    letter-spacing: -1px;
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+  }
+  .coupon-amount .num.small {
+    font-size: 24px;
+  }
+  .coupon-amount .unit {
+    font-size: 13px;
+    margin-left: 2px;
+    font-weight: 500;
+  }
+  /* 共 X 张 角标（卡片左上角贴边）*/
+  .count-tag {
+    position: absolute;
+    top: 0; left: 0;
+    background: var(--brand);
+    color: #fff;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 14px 0 10px 0;
+    line-height: 1.2;
+    font-weight: 500;
+    z-index: 1;
+  }
+  /* 中间垂直虚线分隔 */
+  .coupon-main::after {
+    content: '';
+    position: absolute;
+    left: 94px;
+    top: 16px;
+    bottom: 16px;
+    width: 0;
+    border-left: 1.5px dashed var(--line-dashed);
+  }
+  /* 右侧信息区 */
+  .coupon-info {
+    flex: 1;
+    padding-left: 14px;
+    min-width: 0;
+  }
+  .coupon-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    line-height: 1.3;
+  }
+  .coupon-date {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  /* 票根撕口（水平虚线分隔上下区）*/
+  .coupon-tear {
+    height: 0;
+    border-top: 1px dashed var(--line-dashed);
+    position: relative;
+  }
+  .coupon-tear::before, .coupon-tear::after {
+    content: '';
+    position: absolute;
+    top: -7px;
+    width: 14px; height: 14px;
+    background: var(--bg-page);
+    border-radius: 50%;
+  }
+  .coupon-tear::before { left: -7px; }
+  .coupon-tear::after { right: -7px; }
+  /* 底部 - 使用范围 + 按钮 */
+  .coupon-bottom {
+    padding: 10px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+  }
+  .coupon-scope {
+    font-size: 12px;
+    color: var(--sub);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .coupon-scope .arrow { color: var(--muted); margin-left: 2px; font-size: 10px; }
+  /* 按钮：实心粉 / 描边粉 / 灰禁用 */
+  .coupon-btn {
+    height: 30px;
+    padding: 0 14px;
+    background: var(--brand);
+    color: #fff;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1.5px solid var(--brand);
+    display: inline-flex;
+    align-items: center;
+    box-shadow: 0 1px 3px rgba(238,10,95,0.2);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .coupon-btn.outline {
+    background: #fff;
+    color: var(--brand);
+    box-shadow: none;
+  }
+  .coupon-btn.disabled {
+    background: #d1d5db;
+    border-color: #d1d5db;
+    color: #fff;
+    box-shadow: none;
+  }
+  .coupon-radio {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid #ccc;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+  }
+  .coupon-radio.checked {
+    background: var(--brand);
+    border-color: var(--brand);
+    color: #fff;
+  }
+
+  /* 临近到期红字倒计时（卡片信息区底部一行；仅距券到期 ≤ 24h 显示）*/
+  .expire-countdown {
+    font-size: 12px;
+    color: var(--danger);
+    margin-top: 6px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+  }
+  /* 膨胀活动规则入口（卡片信息区底部，仅可膨胀券显示，PRD §5.6）*/
+  /* v2.2 弱化：让位给红字"24h 倒计时"焦点 */
+  .rule-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 400;
+  }
+  .rule-link .arrow { font-size: 10px; opacity: 0.6; }
+
+  /* 半屏底部弹窗 - 膨胀活动规则 */
+  .rule-sheet-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: flex;
+    align-items: flex-end;
+    z-index: 30;
+  }
+  .rule-sheet {
+    width: 100%;
+    max-height: 65%;
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    animation: slideUp 0.3s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .rule-sheet-head {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .rule-sheet-head .close {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.04);
+    color: #999;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .rule-sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px;
+    font-size: 13px;
+    color: var(--sub);
+    line-height: 1.7;
+  }
+  .rule-sheet-body h4 {
+    color: var(--text);
+    font-size: 15px;
+    margin: 12px 0 8px;
+  }
+  .rule-sheet-body h4:first-child { margin-top: 0; }
+  .rule-sheet-body p { margin-bottom: 8px; }
+  .rule-sheet-body ul { padding-left: 18px; }
+  .rule-sheet-body li { margin-bottom: 4px; }
+  .rule-sheet-body .em { color: var(--brand); font-weight: 600; }
+  .rule-sheet-foot {
+    padding: 12px 18px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .rule-sheet-foot button {
+    width: 100%;
+    height: 40px;
+    background: var(--brand);
+    color: #fff;
+    border: none;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  /* 已膨胀印章（卡片右上角，粉色版）*/
+  .inflated-stamp {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid var(--brand);
+    color: var(--brand);
+    background: radial-gradient(circle at 35% 30%, #fff 0%, #ffe4ee 60%, #ffc8dc 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    transform: rotate(-12deg);
+    z-index: 2;
+    line-height: 1.1;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(238,10,95,0.22), inset 0 0 0 1px rgba(255,255,255,0.6);
+    font-family: -apple-system, sans-serif;
+  }
+  .inflated-stamp::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px dashed rgba(238,10,95,0.4);
+    border-radius: 50%;
+  }
+
+  /* 不可用券 */
+  .coupon-item.disabled .coupon-thumb { filter: grayscale(1); opacity: 0.5; }
+  .coupon-item.disabled .coupon-name { color: #aaa; }
+  .coupon-item.disabled .coupon-date { color: #ccc; }
+  .coupon-item.disabled .coupon-scope { color: #aaa; }
+  .coupon-item.disabled { opacity: 0.85; }
+
+  /* 历史链接 */
+  .history-link { text-align: center; padding: 12px; font-size: 13px; color: var(--muted); }
+
+  /* 我的优惠券底部 2 列 */
+  .bottom-actions {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    display: flex;
+    height: 50px;
+  }
+  .bottom-actions .action {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    color: var(--text);
+  }
+  .bottom-actions .action + .action { border-left: 1px solid var(--border); }
+
+  /* 结算页底部确认条 */
+  .checkout-foot {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 60px;
+  }
+  .checkout-foot-info {
+    font-size: 14px;
+    color: var(--text);
+  }
+  .checkout-foot-info .red {
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 18px;
+  }
+  .confirm-btn {
+    height: 38px;
+    padding: 0 28px;
+    background: var(--danger);
+    color: #fff;
+    border-radius: 19px;
+    font-size: 15px;
+    font-weight: 600;
+    border: none;
+  }
+
+  /* 膨胀弹窗 */
+  .modal-mask {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+  }
+  .modal-card {
+    width: 270px;
+    background: linear-gradient(180deg, #fff 0%, #fff5eb 100%);
+    border-radius: 18px;
+    padding: 30px 22px 22px;
+    text-align: center;
+    position: relative;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+  }
+  .modal-card .close-btn {
+    position: absolute;
+    top: 12px; right: 14px;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.05);
+    color: #999;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .inflate-icon {
+    font-size: 56px;
+    margin-bottom: 6px;
+    display: inline-block;
+    animation: bounce 1.5s infinite;
+  }
+  @keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+  .modal-h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--brand-dark);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .modal-sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  /* 滚动数字（膨胀中态）*/
+  .spin-amount {
+    font-size: 38px;
+    font-weight: 800;
+    color: var(--brand-dark);
+    height: 56px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .spin-amount .roll {
+    display: inline-block;
+    animation: roll 0.4s steps(8) infinite;
+  }
+  @keyframes roll {
+    from { transform: translateY(0); }
+    to { transform: translateY(-224px); }
+  }
+
+  /* 膨胀奖品卡（v2.2 升级：粉金双色+发光阴影+四角装饰）*/
+  .gold-card {
+    background: linear-gradient(160deg, #fff5f8 0%, #fff0f5 35%, #ffe4ee 100%);
+    border: 1.5px dashed var(--brand);
+    border-radius: 16px;
+    padding: 22px 14px 24px;
+    margin: 6px 0 20px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(238,10,95,0.12), inset 0 0 0 4px rgba(255,255,255,0.7);
+  }
+  /* 四角小装饰圆 */
+  .gold-card::before {
+    content: '';
+    position: absolute;
+    top: -28px; right: -28px;
+    width: 70px; height: 70px;
+    background: radial-gradient(circle, rgba(238,10,95,0.10) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .gold-card::after {
+    content: '';
+    position: absolute;
+    bottom: -28px; left: -28px;
+    width: 70px; height: 70px;
+    background: radial-gradient(circle, rgba(251,191,36,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .gold-card .label {
+    font-size: 12px;
+    color: var(--brand);
+    margin-bottom: 6px;
+    position: relative; z-index: 1;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+  }
+  .gold-card .amount {
+    font-size: 48px;
+    font-weight: 800;
+    color: var(--brand-dark);
+    line-height: 1.1;
+    letter-spacing: 0;
+    position: relative; z-index: 1;
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+    text-shadow: 0 2px 6px rgba(238,10,95,0.15);
+  }
+  .gold-card .amount .yen {
+    font-size: 24px;
+    margin-right: 2px;
+    font-weight: 700;
+    vertical-align: 4px;
+  }
+  .action-btn {
+    width: 100%;
+    background: linear-gradient(135deg, var(--brand), var(--brand-dark));
+    color: #fff;
+    padding: 13px 0;
+    border-radius: 24px;
+    font-size: 15px;
+    font-weight: 700;
+    border: none;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 14px rgba(255,140,43,0.35);
+  }
+  .action-sub { margin-top: 10px; font-size: 12px; color: var(--muted); }
+
+  /* note */
+  .note-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    max-width: 640px;
+    margin: 40px auto 0;
+    font-size: 13px;
+    color: #555;
+    line-height: 1.7;
+  }
+  .note-box h4 { color: var(--brand-dark); margin-bottom: 10px; }
+  .note-box .key { color: var(--brand); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="page-title">💸 膨胀神券 · 小程序端原型</div>
+<div class="page-subtitle">6 个核心 Screen（v2.2）：我的优惠券 → 膨胀中 → 膨胀成功 → 已膨胀态 → 结算页选券 → 膨胀活动规则弹窗</div>
+
+<div class="mobile-container">
+
+  <!-- 1. 我的优惠券（含可膨胀券）-->
+  <div class="phone-wrapper">
+    <div class="phone-label">Screen 1 · 我的优惠券</div>
+    <div class="phone-frame">
+      <div class="page">
+        <div class="status-bar"><span>14:36</span><span>📶 📡 🔋</span></div>
+        <div class="nav-bar">
+          <span class="nav-back">‹</span>
+          <span class="nav-title">我的优惠券</span>
+          <div class="mp-capsule"><span class="dot">•••</span><span style="font-size:11px;color:#888;">⊙</span></div>
+        </div>
+
+        <div class="coupon-list" style="padding-bottom:70px;">
+          <!-- 可膨胀券 · 距过期 > 24h -->
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">新人代金券</div>
+                <div class="coupon-date">2026.05.19~2026.05.25</div>
+                <div class="rule-link">膨胀活动规则 <span class="arrow">›</span></div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <button class="coupon-btn">免费膨胀</button>
+            </div>
+          </div>
+
+          <!-- 可膨胀券 · 距过期 ≤ 24h（红字倒计时）-->
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">满35减5元券</div>
+                <div class="coupon-date">2026.05.20~2026.05.22</div>
+                <div class="expire-countdown">⏰ 08:25:06 后将不可膨胀</div>
+                <div class="rule-link">膨胀活动规则 <span class="arrow">›</span></div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <button class="coupon-btn">免费膨胀</button>
+            </div>
+          </div>
+
+          <!-- 普通券（多张同款，左上角"共 X 张"角标）-->
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <span class="count-tag">共 2 张</span>
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">5元代金券</div>
+                <div class="coupon-date">2026.05.11~2026.06.30</div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <button class="coupon-btn">立即使用</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="history-link">查看历史优惠券</div>
+
+        <div class="bottom-actions">
+          <div class="action">兑换优惠券</div>
+          <div class="action">赠送记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 膨胀中（动效弹窗） -->
+  <div class="phone-wrapper">
+    <div class="phone-label">Screen 2 · 膨胀中（动效）</div>
+    <div class="phone-frame">
+      <div class="page">
+        <div class="status-bar"><span>14:36</span><span>📶 📡 🔋</span></div>
+        <div class="nav-bar">
+          <span class="nav-back">‹</span>
+          <span class="nav-title">我的优惠券</span>
+          <div class="mp-capsule"><span class="dot">•••</span><span style="font-size:11px;color:#888;">⊙</span></div>
+        </div>
+        <div class="coupon-list" style="filter: brightness(0.55);">
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">新人代金券</div>
+                <div class="coupon-date">2026.05.19~2026.05.25</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-mask">
+          <div class="modal-card">
+            <div class="inflate-icon">🎰</div>
+            <div class="modal-h3">膨胀中...</div>
+            <div class="spin-amount">
+              <div class="roll">
+                ¥5.30<br/>¥6.50<br/>¥7.20<br/>¥5.80<br/>¥6.90<br/>¥7.50<br/>¥5.60<br/>¥6.30
+              </div>
+            </div>
+            <div class="modal-sub">幸运抽取中，请稍候...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 膨胀成功（弹窗）-->
+  <div class="phone-wrapper">
+    <div class="phone-label">Screen 3 · 膨胀成功</div>
+    <div class="phone-frame">
+      <div class="page">
+        <div class="status-bar"><span>14:36</span><span>📶 📡 🔋</span></div>
+        <div class="nav-bar">
+          <span class="nav-back">‹</span>
+          <span class="nav-title">我的优惠券</span>
+          <div class="mp-capsule"><span class="dot">•••</span><span style="font-size:11px;color:#888;">⊙</span></div>
+        </div>
+        <div class="coupon-list" style="filter: brightness(0.55);"></div>
+
+        <div class="modal-mask">
+          <div class="modal-card">
+            <span class="close-btn">×</span>
+            <div class="inflate-icon">🎉</div>
+            <div class="modal-h3">恭喜膨胀成功！</div>
+            <div class="modal-sub">原 ¥5 → 膨胀至</div>
+            <div class="gold-card">
+              <div class="label">膨胀后券面值</div>
+              <div class="amount"><span class="yen">¥</span>6.90</div>
+            </div>
+            <button class="action-btn">立即使用</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 已膨胀态 -->
+  <div class="phone-wrapper">
+    <div class="phone-label">Screen 4 · 已膨胀态</div>
+    <div class="phone-frame">
+      <div class="page">
+        <div class="status-bar"><span>14:37</span><span>📶 📡 🔋</span></div>
+        <div class="nav-bar">
+          <span class="nav-back">‹</span>
+          <span class="nav-title">我的优惠券</span>
+          <div class="mp-capsule"><span class="dot">•••</span><span style="font-size:11px;color:#888;">⊙</span></div>
+        </div>
+
+        <div class="coupon-list" style="padding-bottom:70px;">
+          <!-- 已膨胀券 · 右上角印章 + 字段位置与未膨胀完全一致 -->
+          <div class="coupon-item">
+            <div class="inflated-stamp">已膨胀</div>
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num small">6.90</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">新人代金券</div>
+                <div class="coupon-date">2026.05.19~2026.05.25</div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <button class="coupon-btn">立即使用</button>
+            </div>
+          </div>
+
+          <!-- 普通券（多张）-->
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <span class="count-tag">共 2 张</span>
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">5元代金券</div>
+                <div class="coupon-date">2026.05.11~2026.06.30</div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <button class="coupon-btn">立即使用</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-actions">
+          <div class="action">兑换优惠券</div>
+          <div class="action">赠送记录</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 结算页选券 -->
+  <div class="phone-wrapper">
+    <div class="phone-label">Screen 5 · 结算页选券</div>
+    <div class="phone-frame">
+      <div class="page">
+        <div class="status-bar"><span>14:37</span><span>📶 📡 🔋</span></div>
+        <div class="nav-bar">
+          <span class="nav-back">‹</span>
+          <span class="nav-title"></span>
+          <div class="mp-capsule"><span class="dot">•••</span><span style="font-size:11px;color:#888;">⊙</span></div>
+        </div>
+        <div class="tabs">
+          <div class="tab active">可用(2)</div>
+          <div class="tab">不可用(1)</div>
+        </div>
+
+        <div class="recommend-row">
+          <span class="check-icon">✓</span>
+          <span>选择使用推荐优惠券</span>
+        </div>
+
+        <div class="coupon-list" style="padding-bottom:80px;">
+          <!-- 可膨胀券（统一卡片：左大字 + 信息 + "免费膨胀"按钮）-->
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">新人代金券</div>
+                <div class="coupon-date">2026.05.19~2026.05.25</div>
+                <div class="expire-countdown">⏰ 08:25:06 后将不可膨胀</div>
+                <div class="rule-link">膨胀活动规则 <span class="arrow">›</span></div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <button class="coupon-btn">免费膨胀</button>
+            </div>
+          </div>
+
+          <!-- 已选中的普通券（统一卡片 + ✓ 选中圆替代按钮）-->
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">5元代金券</div>
+                <div class="coupon-date">2026.05.11~2026.06.30</div>
+              </div>
+            </div>
+            <div class="coupon-tear"></div>
+            <div class="coupon-bottom">
+              <span class="coupon-scope">限堂食、自提场景使用 <span class="arrow">▼</span></span>
+              <span class="coupon-radio checked">✓</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="checkout-foot">
+          <div class="checkout-foot-info">已选 1 张，共抵扣<span class="red">¥5</span></div>
+          <button class="confirm-btn">确定</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. 膨胀活动规则半屏弹窗 -->
+  <div class="phone-wrapper">
+    <div class="phone-label">Screen 6 · 膨胀活动规则弹窗</div>
+    <div class="phone-frame">
+      <div class="page">
+        <div class="status-bar"><span>14:36</span><span>📶 📡 🔋</span></div>
+        <div class="nav-bar">
+          <span class="nav-back">‹</span>
+          <span class="nav-title">我的优惠券</span>
+          <div class="mp-capsule"><span class="dot">•••</span><span style="font-size:11px;color:#888;">⊙</span></div>
+        </div>
+        <div class="coupon-list" style="filter: brightness(0.7);">
+          <div class="coupon-item">
+            <div class="coupon-main">
+              <div class="coupon-amount">
+                <span class="num">5</span><span class="unit">元</span>
+              </div>
+              <div class="coupon-info">
+                <div class="coupon-name">新人代金券</div>
+                <div class="coupon-date">2026.05.19~2026.05.25</div>
+                <div class="rule-link">膨胀活动规则 <span class="arrow">›</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-sheet-mask">
+          <div class="rule-sheet">
+            <div class="rule-sheet-head">
+              膨胀活动规则
+              <span class="close">×</span>
+            </div>
+            <div class="rule-sheet-body">
+              <h4>春日膨胀节</h4>
+              <p>活动时间：<span class="em">2026.05.15 ~ 2026.05.31</span></p>
+              <h4>玩法说明</h4>
+              <ul>
+                <li>持有命中本活动的优惠券，点击"<span class="em">免费膨胀</span>"按钮即可放大优惠面额</li>
+                <li>每张券<span class="em">仅可膨胀 1 次</span>，膨胀后不可还原</li>
+                <li>膨胀只改变券的优惠金额，<span class="em">门槛、有效期、适用范围保持不变</span></li>
+                <li>券到期前未点击膨胀，则按初始面值正常使用</li>
+              </ul>
+              <h4>春日大促说明</h4>
+              <p>✨ 五月好礼相约！满 35 元立减最高至 8 元</p>
+              <p>📍 仅限堂食 / 自提订单使用</p>
+              <p style="color:var(--muted);font-size:11px;margin-top:14px;">* 本说明由商家在运营后台配置，富文本渲染</p>
+            </div>
+            <div class="rule-sheet-foot">
+              <button>我知道了</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="note-box">
+  <h4>📋 原型说明（v2.2 · 食亨真布局 + 方案 A 最小复用 + 膨胀活动规则入口）</h4>
+  <p>对应 PRD <span class="key">§5 小程序端 + §5.5 视觉规范 + §5.6 膨胀活动规则入口</span> 的 6 个核心交互态。</p>
+  <p><span class="key">主色</span>：玫红 <code>#ee0a5f</code>（食亨品牌色）。<span class="key">布局</span>：左大字（82px）+ 垂直虚线 + 中信息区，对齐食亨"我的优惠券"真截图。</p>
+  <p><span class="key">3 个差异化元素（§5.5.1）</span>：① "免费膨胀"按钮（替代"立即使用"）；② 红字倒计时（距到期 ≤ 24h）；③ 已膨胀印章（右上角，粉色径向渐变 + 内层虚线圆 + -12° 旋转）。</p>
+  <p><span class="key">膨胀活动规则入口（§5.6）</span>：卡片信息区底部"膨胀活动规则 ›"<strong>灰色小字</strong>链接（仅可膨胀券显示，弱化处理让位给红字倒计时）→ 点击弹半屏弹窗，<strong>完全展示后台配置的活动说明（富文本渲染）</strong>，不叠加系统规则段。</p>
+  <p><span class="key">强制膨胀（§5.1.1）</span>：可膨胀券只有"免费膨胀"按钮，无"立即使用"；膨胀只会涨不会跌，用户损失为零。</p>
+</div>
+
+</body>
+</html>

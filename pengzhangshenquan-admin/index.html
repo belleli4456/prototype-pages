@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>膨胀神券 - 运营后台原型</title>
+  <style>
+    :root {
+      --brand: #f97316;
+      --brand-dark: #c2410c;
+      --brand-soft: #fff7ed;
+      --bg: #f5f6f8;
+      --line: #ebeef3;
+      --line-dark: #d8dde6;
+      --text: #1f2329;
+      --subtext: #4e5969;
+      --muted: #86909c;
+      --danger: #f5222d;
+      --shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button, input, select, textarea { font: inherit; }
+
+    /* Topbar */
+    .topbar {
+      height: 68px;
+      background: #fff;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 28px; }
+    .brand { color: var(--brand); font-size: 22px; font-weight: 700; letter-spacing: 0.5px; }
+    .system-nav { display: flex; gap: 10px; height: 68px; }
+    .system-item {
+      display: flex; align-items: center; padding: 0 12px;
+      color: #5b6575; font-size: 16px; position: relative;
+    }
+    .system-item.active { color: var(--brand); font-weight: 600; }
+    .system-item.active::after {
+      content: ""; position: absolute; left: 10px; right: 10px; bottom: 0;
+      height: 3px; background: var(--brand); border-radius: 3px 3px 0 0;
+    }
+    .topbar-right { color: var(--muted); font-size: 13px; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 210px 1fr;
+      min-height: calc(100vh - 68px);
+    }
+    .sidebar { background: #fff; border-right: 1px solid var(--line); padding: 14px 0 24px; }
+    .menu-item { padding: 12px 28px; font-size: 15px; color: #2f3640; cursor: pointer; transition: background 0.15s; }
+    .menu-item.group { font-weight: 600; margin-top: 6px; color: #86909c; font-size: 12px; padding-top: 14px; letter-spacing: 0.5px; }
+    .menu-item.active { color: var(--brand); background: var(--brand-soft); border-right: 3px solid var(--brand); font-weight: 600; }
+    .menu-item:hover:not(.group):not(.active) { background: #f7f8fa; }
+
+    .main { padding: 0; }
+    .page-wrap { padding: 20px 28px 40px; }
+    .breadcrumb { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+    .breadcrumb a { color: var(--muted); }
+    .breadcrumb .sep { margin: 0 6px; }
+    .breadcrumb .current { color: var(--text); }
+    .page-title { display: flex; align-items: center; gap: 12px; font-size: 28px; font-weight: 700; margin: 0 0 18px; letter-spacing: 0.5px; }
+
+    .form-container { background: #fff; padding: 32px 40px; border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); }
+    .form-col { max-width: 1100px; }
+
+    .section-title { font-size: 22px; font-weight: 700; margin: 0 0 22px; padding-left: 12px; border-left: 4px solid var(--brand); line-height: 1; }
+    .section-title.mt { margin-top: 42px; }
+
+    .form-row { display: flex; align-items: flex-start; gap: 18px; margin-bottom: 22px; }
+    .label { width: 150px; padding-top: 10px; text-align: right; color: var(--subtext); font-size: 15px; line-height: 24px; flex: 0 0 150px; }
+    .required::before { content: "*"; color: var(--danger); margin-right: 6px; }
+    .control { flex: 1; min-width: 0; }
+
+    .input, .select, .textarea {
+      height: 40px; border: 1px solid var(--line-dark); border-radius: 6px;
+      background: #fff; padding: 0 14px; font-size: 14px; color: var(--text);
+      outline: none; width: 100%; max-width: 520px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input:focus, .textarea:focus, .select:focus, select.input:focus {
+      border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+    }
+    .textarea { padding: 10px 14px; min-height: 76px; resize: vertical; }
+    .input.short { width: 110px; max-width: 110px; }
+    .input.medium { width: 260px; max-width: 260px; }
+
+    .inline { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 20px; }
+    .radio, .check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; color: #2f3640; }
+    .radio input, .check input { width: 16px; height: 16px; accent-color: var(--brand); }
+    .helper { margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 20px; }
+    .helper strong { color: var(--subtext); }
+
+    /* Coupon select card */
+    .coupon-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: #fafbfc; margin-bottom: 10px; }
+    .coupon-tag { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+    .coupon-name { flex: 1; font-size: 14px; color: var(--text); }
+    .coupon-meta { color: var(--muted); font-size: 12px; }
+
+    /* 选券后回显（参考食亨样式）*/
+    .coupon-type-tag {
+      display: inline-block;
+      width: 38px;
+      padding: 6px 0;
+      background: var(--brand-soft);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 4px;
+      line-height: 1.2;
+      vertical-align: middle;
+    }
+    .coupon-cell-name {
+      display: inline-block;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+    .coupon-cell-name .ttl { font-size: 14px; font-weight: 500; color: var(--text); }
+    .coupon-cell-name .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .coupon-cell-content .line1 { font-size: 13px; color: var(--text); }
+    .coupon-cell-content .line2 { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* Inflate config table */
+    table.form-table {
+      width: 100%; border-collapse: collapse; margin-top: 10px;
+      font-size: 13px; background: #fff; border-radius: 8px;
+      overflow: hidden; border: 1px solid var(--line);
+    }
+    table.form-table th { background: #fafbfd; padding: 12px 14px; text-align: left; font-weight: 600; color: #5c6678; font-size: 13px; border-bottom: 1px solid var(--line); }
+    table.form-table td { padding: 13px 14px; color: var(--text); border-bottom: 1px solid #f0f2f5; }
+    table.form-table tbody tr:last-child td { border-bottom: none; }
+    table.form-table tbody tr:hover td { background: var(--brand-soft); }
+    table.form-table .ops a { color: var(--brand); cursor: pointer; margin-right: 12px; font-size: 13px; }
+    table.form-table .ops a:hover { text-decoration: underline; }
+
+    /* 区间删除按钮 */
+    .ccc-remove { color: var(--danger); cursor: pointer; font-size: 13px; }
+    .ccc-remove:hover { text-decoration: underline; }
+
+    /* 横向区间行（嵌入券表格 cell 内） */
+    .range-inline-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+      font-size: 12px;
+    }
+    .range-inline-row input { height: 28px; font-size: 12px; padding: 0 6px; }
+    .range-inline-row .range-input { width: 56px !important; max-width: 56px !important; text-align: center; }
+    .range-inline-row .ccc-remove { color: var(--danger); cursor: pointer; font-size: 14px; padding: 0 4px; }
+
+    /* Range row */
+    .range-row { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px dashed #f0f2f5; }
+    .range-row:last-child { border-bottom: none; }
+    .range-input { width: 80px; text-align: center; }
+    .range-prob { background: var(--brand-soft); padding: 4px 12px; border-radius: 12px; color: var(--brand-dark); font-weight: 600; font-size: 12px; }
+
+    /* Callout */
+    .callout { padding: 12px 16px; border-radius: 6px; font-size: 13px; line-height: 1.75; margin: 10px 0; }
+    .callout-info { background: var(--brand-soft); border-left: 3px solid var(--brand); color: var(--subtext); }
+    .callout-warn { background: #fef3c7; border-left: 3px solid #f59e0b; color: #92400e; }
+
+    /* Buttons */
+    .btn { min-width: 96px; height: 38px; border-radius: 6px; border: 1px solid var(--line-dark); background: #fff; color: #36404d; cursor: pointer; font-size: 14px; padding: 0 18px; transition: background 0.15s, border-color 0.15s; }
+    .btn:hover { background: #f7f8fa; border-color: var(--brand); color: var(--brand); }
+    .btn.primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .btn.primary:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+    .btn-link { background: transparent; border: none; color: var(--brand); cursor: pointer; font-size: 14px; padding: 0; }
+    .btn-link:hover { text-decoration: underline; }
+    .coupon-add-btn { margin-top: 10px; height: 36px; padding: 0 18px; border: 1px dashed var(--brand); background: var(--brand-soft); color: var(--brand); border-radius: 6px; font-size: 13px; cursor: pointer; }
+
+    /* Bottom bar */
+    .bottom-bar { position: sticky; bottom: 0; background: #fff; border-top: 1px solid var(--line); padding: 16px 32px; display: flex; gap: 12px; justify-content: flex-end; z-index: 15; margin-top: 24px; border-radius: 0 0 10px 10px; }
+
+    /* 二级 chips 选择器（面向用户：权益卡/会员等级）*/
+    .chips-wrap {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;
+      padding: 12px; background: #fafbfc; border: 1px solid var(--line); border-radius: 6px;
+      max-width: 520px;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; background: #fff; border: 1px solid var(--line-dark);
+      border-radius: 14px; font-size: 13px; color: var(--subtext); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .chip:hover { border-color: var(--brand); color: var(--brand); }
+    .chip.selected { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); font-weight: 500; }
+    .chip.selected::before { content: "✓ "; }
+
+    /* 富文本编辑器（mock） */
+    .rte {
+      max-width: 720px;
+      border: 1px solid var(--line-dark);
+      border-radius: 6px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .rte:focus-within { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(249,115,22,0.12); }
+    .rte-toolbar {
+      display: flex; align-items: center; gap: 4px;
+      padding: 6px 10px; background: #fafbfd;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+    .rte-btn {
+      width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 4px; cursor: pointer; color: #5c6678; font-size: 14px;
+      border: none; background: transparent;
+      transition: background 0.15s;
+    }
+    .rte-btn:hover { background: #eef0f3; color: var(--brand); }
+    .rte-btn.active { background: var(--brand-soft); color: var(--brand); }
+    .rte-btn.bold { font-weight: 700; }
+    .rte-btn.italic { font-style: italic; }
+    .rte-btn.underline { text-decoration: underline; }
+    .rte-sep { width: 1px; height: 16px; background: var(--line-dark); margin: 0 4px; }
+    .rte-select {
+      height: 26px; padding: 0 6px; font-size: 12px;
+      border: 1px solid var(--line); border-radius: 3px; background: #fff;
+      color: #5c6678;
+    }
+    .rte-content {
+      min-height: 140px;
+      padding: 14px 16px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--text);
+      outline: none;
+    }
+    .rte-content p { margin: 0 0 6px; }
+    .rte-content ul { margin: 4px 0 6px 18px; }
+    .rte-content .brand { color: var(--brand); font-weight: 600; }
+    .rte-footer {
+      display: flex; justify-content: flex-end;
+      padding: 4px 12px; background: #fafbfd; border-top: 1px solid var(--line);
+      color: var(--muted); font-size: 11px;
+    }
+
+    /* Page switcher (demo) */
+    .page-switcher { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: #fff8e6; border-bottom: 1px solid #fde68a; font-size: 12px; }
+    .page-switcher button { height: 28px; padding: 0 12px; border: 1px solid var(--line-dark); background: #fff; color: #36404d; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .page-switcher button.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+    /* List table */
+    .list-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 22px; margin-bottom: 18px; background: #fff; padding: 18px 22px; border-radius: 10px; border: 1px solid var(--line); }
+    .filter-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #4e5969; }
+    .filter-item label { color: var(--subtext); font-size: 14px; }
+    .list-table { background: #fff; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .list-table table { width: 100%; border-collapse: collapse; }
+    .list-table th, .list-table td { padding: 14px 16px; border-bottom: 1px solid #f0f2f5; text-align: left; font-size: 14px; color: #36404d; }
+    .list-table th { background: #fafbfd; color: #5c6678; font-weight: 600; font-size: 13px; }
+    .list-table tbody tr:hover td { background: #f9fafb; }
+    .list-table .ops a { color: var(--brand); cursor: pointer; margin-right: 12px; font-size: 13px; }
+    .list-table .ops a:hover { text-decoration: underline; }
+
+    /* Status badge */
+    .state { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+    .state.draft { background: #f0f2f5; color: #6b7180; }
+    .state.todo { background: #e8f0ff; color: #2563eb; }
+    .state.running { background: #e6f7ec; color: #16a34a; }
+    .state.ended { background: #f0f2f5; color: #6b7180; }
+    .state.void { background: #fdebec; color: var(--danger); }
+
+    /* KPI grid */
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .kpi-card { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 18px 20px; }
+    .kpi-card .t { color: var(--subtext); font-size: 13px; margin-bottom: 8px; }
+    .kpi-card .v { font-size: 24px; font-weight: 700; color: var(--text); }
+    .kpi-card .d { font-size: 12px; color: var(--brand); margin-top: 6px; }
+
+    .hide { display: none !important; }
+
+    /* 膨胀明细 — 核销状态徽章 */
+    .badge-status { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+    .badge-status.used { background: #e6f7ec; color: #16a34a; }
+    .badge-status.unused { background: #e8f0ff; color: #2563eb; }
+    .badge-status.expired { background: #f0f2f5; color: #6b7180; }
+
+    /* 致命字段拦截 — 模态遮罩 + 弹窗 */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(15,23,42,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal-dialog {
+      width: 480px;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+    }
+    .modal-head {
+      padding: 18px 22px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--line);
+      font-size: 16px; font-weight: 600; color: var(--text);
+    }
+    .modal-head .icon { color: #f59e0b; font-size: 20px; }
+    .modal-body {
+      padding: 20px 22px;
+      font-size: 14px; color: var(--subtext); line-height: 1.7;
+    }
+    .modal-body ul { margin: 8px 0 12px 18px; color: var(--text); }
+    .modal-body li { margin-bottom: 4px; }
+    .modal-foot {
+      padding: 14px 22px;
+      border-top: 1px solid var(--line);
+      display: flex; justify-content: flex-end; gap: 10px;
+      background: #fafbfd;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="brand">LINLEE · 智慧门店</div>
+      <div class="system-nav">
+        <div class="system-item">首页</div>
+        <div class="system-item">商品</div>
+        <div class="system-item">订单</div>
+        <div class="system-item">会员</div>
+        <div class="system-item active">营销</div>
+        <div class="system-item">数据</div>
+      </div>
+    </div>
+    <div class="topbar-right">信息部-陈豹 3232 · 2026-05-25 · v2.2</div>
+  </div>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="menu-item group">营销活动</div>
+      <div class="menu-item">抽奖大转盘</div>
+      <div class="menu-item">集卡活动</div>
+      <div class="menu-item">养成活动</div>
+      <div class="menu-item active">膨胀神券</div>
+      <div class="menu-item">问卷调查</div>
+      <div class="menu-item">超值加购</div>
+      <div class="menu-item group">券中心</div>
+      <div class="menu-item">券模板</div>
+    </aside>
+
+    <main class="main">
+      <div class="page-switcher">
+        <span style="color: var(--muted);">原型视图切换：</span>
+        <button class="active" onclick="switchPage('create')">① 新建活动</button>
+        <button onclick="switchPage('list')">② 活动列表</button>
+        <button onclick="switchPage('data')">③ 活动数据</button>
+        <button onclick="switchPage('rule')">④ 券模板拦截弹窗</button>
+      </div>
+
+      <!-- PAGE 1: 新建活动 -->
+      <div class="page-wrap" id="page-create">
+        <div class="breadcrumb">
+          <a>营销中心</a><span class="sep">›</span>
+          <a>营销活动</a><span class="sep">›</span>
+          <span class="current">新建膨胀神券</span>
+        </div>
+        <h1 class="page-title">💸 新建膨胀神券活动</h1>
+
+        <div class="form-container">
+          <div class="form-col">
+
+            <!-- 基础信息 -->
+            <h3 class="section-title">基本信息</h3>
+
+            <div class="form-row">
+              <div class="label required">活动名称：</div>
+              <div class="control">
+                <input class="input" placeholder="请输入活动名称" maxlength="30" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">活动时间：</div>
+              <div class="control">
+                <div class="inline">
+                  <input class="input medium" type="date" />
+                  <span style="color: var(--subtext);">至</span>
+                  <input class="input medium" type="date" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">面向用户：</div>
+              <div class="control">
+                <select class="input medium" id="user-type" onchange="onUserTypeChange(this.value)">
+                  <option value="all">全部用户</option>
+                  <option value="register">注册会员</option>
+                  <option value="card" selected>指定权益卡用户</option>
+                  <option value="level">指定等级会员</option>
+                  <option value="qiwei">企微好友用户</option>
+                </select>
+
+                <!-- 二级选择：权益卡 -->
+                <div id="sub-card" class="chips-wrap">
+                  <span style="font-size:13px;color:var(--muted);width:100%;margin-bottom:2px;">选择权益卡（可多选）：</span>
+                  <span class="chip selected" onclick="toggleChip(this)">尊享会员卡</span>
+                  <span class="chip selected" onclick="toggleChip(this)">青春卡</span>
+                  <span class="chip" onclick="toggleChip(this)">家庭卡</span>
+                  <span class="chip" onclick="toggleChip(this)">星耀卡</span>
+                  <span class="chip" onclick="toggleChip(this)">企业卡</span>
+                </div>
+
+                <!-- 二级选择：会员等级 -->
+                <div id="sub-level" class="chips-wrap hide">
+                  <span style="font-size:13px;color:var(--muted);width:100%;margin-bottom:2px;">选择会员等级（可多选）：</span>
+                  <span class="chip" onclick="toggleChip(this)">V1 · 新会员</span>
+                  <span class="chip" onclick="toggleChip(this)">V2 · 银卡会员</span>
+                  <span class="chip" onclick="toggleChip(this)">V3 · 金卡会员</span>
+                  <span class="chip" onclick="toggleChip(this)">V4 · 钻石会员</span>
+                  <span class="chip" onclick="toggleChip(this)">V5 · 黑金会员</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">活动优先级：</div>
+              <div class="control">
+                <div class="inline">
+                  <input id="priority-input" class="input short" type="number" min="1" value="50" />
+                  <label class="check">
+                    <input type="checkbox" id="top-priority-check" onchange="toggleTopPriority(this)" />
+                    最高优先级
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- 活动规则 -->
+            <h3 class="section-title mt">活动规则</h3>
+
+            <!-- 活动级参数 -->
+            <div class="form-row">
+              <div class="label required">膨胀金额小数位数：</div>
+              <div class="control">
+                <div class="inline">
+                  <label class="radio"><input type="radio" name="decimal" value="0" onchange="onDecimalChange(0)" />无小数点</label>
+                  <label class="radio"><input type="radio" name="decimal" value="1" onchange="onDecimalChange(1)" />1 位小数点</label>
+                  <label class="radio"><input type="radio" name="decimal" value="2" checked onchange="onDecimalChange(2)" />2 位小数点</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">选择优惠券：</div>
+              <div class="control">
+                <!-- 选券后回显（参考食亨 4 列样式）-->
+                <table class="form-table">
+                  <thead>
+                    <tr>
+                      <th style="width:28%;">优惠券模板</th>
+                      <th style="width:22%;">优惠内容</th>
+                      <th style="width:38%;">膨胀区间（元）/ 概率</th>
+                      <th style="width:12%;">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <span class="coupon-type-tag">商品<br/>立减</span>
+                        <span class="coupon-cell-name">
+                          <div class="ttl">满 35 减 5 元-周年庆</div>
+                          <div class="sub">ID：CPN10086</div>
+                        </span>
+                      </td>
+                      <td class="coupon-cell-content">
+                        <div class="line1">减 5.00 元 / 满 35 元</div>
+                        <div class="line2">领券当日起 30 日内可用</div>
+                      </td>
+                      <td>
+                        <div class="range-inline-row">
+                          <input class="input range-input" type="number" value="5.01" /><span>~</span>
+                          <input class="input range-input" type="number" value="6.00" />
+                          <input class="input range-input" type="number" value="35" /><span>%</span>
+                        </div>
+                        <div class="range-inline-row">
+                          <input class="input range-input" type="number" value="6.01" /><span>~</span>
+                          <input class="input range-input" type="number" value="7.00" />
+                          <input class="input range-input" type="number" value="40" /><span>%</span>
+                        </div>
+                        <div class="range-inline-row">
+                          <input class="input range-input" type="number" value="7.01" /><span>~</span>
+                          <input class="input range-input" type="number" value="8.00" />
+                          <input class="input range-input" type="number" value="25" /><span>%</span>
+                          <a class="ccc-remove">-</a>
+                        </div>
+                        <a class="btn-link" style="font-size:12px;">+ 添加区间</a>
+                      </td>
+                      <td class="ops"><a>删除</a></td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <span class="coupon-type-tag">代金<br/>优惠</span>
+                        <span class="coupon-cell-name">
+                          <div class="ttl">立减 5 元无门槛-心动来袭</div>
+                          <div class="sub">ID：CPN10088</div>
+                        </span>
+                      </td>
+                      <td class="coupon-cell-content">
+                        <div class="line1">减 5.00 元 / 无门槛</div>
+                        <div class="line2">领券当日起 14 日内可用</div>
+                      </td>
+                      <td>
+                        <div class="range-inline-row">
+                          <input class="input range-input" type="number" value="5.01" /><span>~</span>
+                          <input class="input range-input" type="number" value="8.00" />
+                          <input class="input range-input" type="number" value="70" /><span>%</span>
+                        </div>
+                        <div class="range-inline-row">
+                          <input class="input range-input" type="number" value="8.01" /><span>~</span>
+                          <input class="input range-input" type="number" value="10.00" />
+                          <input class="input range-input" type="number" value="30" /><span>%</span>
+                        </div>
+                        <a class="btn-link" style="font-size:12px;">+ 添加区间</a>
+                      </td>
+                      <td class="ops"><a>删除</a></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <button class="coupon-add-btn" style="margin-top: 10px;">+ 添加优惠券</button>
+              </div>
+            </div>
+
+            <h3 class="section-title mt">样式设置</h3>
+
+            <div class="form-row">
+              <div class="label required">活动说明：</div>
+              <div class="control">
+                <div class="rte">
+                  <div class="rte-toolbar">
+                    <button class="rte-btn bold" title="加粗">B</button>
+                    <button class="rte-btn italic" title="斜体">I</button>
+                    <button class="rte-btn underline" title="下划线">U</button>
+                    <span class="rte-sep"></span>
+                    <select class="rte-select" title="字号">
+                      <option>14px</option>
+                      <option>16px</option>
+                      <option>18px</option>
+                      <option>20px</option>
+                    </select>
+                    <select class="rte-select" title="颜色">
+                      <option>默认</option>
+                      <option>主色</option>
+                      <option>灰色</option>
+                    </select>
+                    <span class="rte-sep"></span>
+                    <button class="rte-btn" title="无序列表">≡</button>
+                    <button class="rte-btn" title="有序列表">1.</button>
+                    <span class="rte-sep"></span>
+                    <button class="rte-btn" title="左对齐">⇤</button>
+                    <button class="rte-btn" title="居中">⇔</button>
+                    <span class="rte-sep"></span>
+                    <button class="rte-btn" title="撤销">↶</button>
+                    <button class="rte-btn" title="重做">↷</button>
+                  </div>
+                  <div class="rte-content" contenteditable="true">
+                    <p><strong>春日膨胀节</strong></p>
+                    <p>活动时间：<span class="brand">2026.05.15 ~ 2026.05.31</span></p>
+                    <p><strong>玩法说明</strong></p>
+                    <ul>
+                      <li>持有命中本活动的优惠券，点击"<span class="brand">免费膨胀</span>"按钮即可放大优惠面额</li>
+                      <li>每张券仅可膨胀 1 次，膨胀后不可还原</li>
+                      <li>膨胀只改变券的优惠金额，门槛、有效期、适用范围保持不变</li>
+                      <li>券到期前未点击膨胀，则按初始面值正常使用</li>
+                    </ul>
+                  </div>
+                  <div class="rte-footer">复用食亨标准富文本组件</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="bottom-bar">
+          <button class="btn">取消</button>
+          <button class="btn">保存草稿</button>
+          <button class="btn primary">发布</button>
+        </div>
+      </div>
+
+      <!-- PAGE 2: 活动列表 -->
+      <div class="page-wrap hide" id="page-list">
+        <div class="breadcrumb">
+          <a>营销中心</a><span class="sep">›</span>
+          <a>营销活动</a><span class="sep">›</span>
+          <span class="current">膨胀神券列表</span>
+        </div>
+        <h1 class="page-title">💸 膨胀神券列表</h1>
+
+        <div class="list-toolbar">
+          <div class="filter-item">
+            <label>活动名称：</label>
+            <input class="input medium" placeholder="请输入活动名称" />
+          </div>
+          <div class="filter-item">
+            <label>活动状态：</label>
+            <select class="input medium">
+              <option>全部</option>
+              <option>待发布</option>
+              <option>待开始</option>
+              <option>进行中</option>
+              <option>已结束</option>
+              <option>已作废</option>
+            </select>
+          </div>
+          <button class="btn primary">查询</button>
+          <button class="btn">重置</button>
+          <div style="margin-left: auto;">
+            <button class="btn primary">+ 新建活动</button>
+          </div>
+        </div>
+
+        <div class="list-table">
+          <table>
+            <thead>
+              <tr>
+                <th>活动名称</th>
+                <th>活动时间</th>
+                <th>面向用户</th>
+                <th>包含券模板</th>
+                <th>活动优先级</th>
+                <th>已膨胀券数</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>春日膨胀节<br/><span style="color:var(--muted);font-size:12px;">ID: 1262811376880975872</span></td>
+                <td>2026-05-15 ~ 2026-05-31</td>
+                <td>全部用户</td>
+                <td>2 张券模板</td>
+                <td><span style="background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;padding:3px 10px;border-radius:10px;font-size:12px;font-weight:600;">⭐ 最高</span></td>
+                <td>432</td>
+                <td><span class="state running">进行中</span></td>
+                <td class="ops"><a>编辑</a><a>复制</a><a>作废</a><a>查看数据</a></td>
+              </tr>
+              <tr>
+                <td>520 膨胀回馈<br/><span style="color:var(--muted);font-size:12px;">ID: 1262811376880975873</span></td>
+                <td>2026-05-18 ~ 2026-05-22</td>
+                <td>注册会员</td>
+                <td>1 张券模板</td>
+                <td>60</td>
+                <td>0</td>
+                <td><span class="state todo">待开始</span></td>
+                <td class="ops"><a>编辑</a><a>复制</a><a>作废</a></td>
+              </tr>
+              <tr>
+                <td>母亲节膨胀<br/><span style="color:var(--muted);font-size:12px;">ID: 1262811376880975874</span></td>
+                <td>2026-05-08 ~ 2026-05-12</td>
+                <td>全部用户</td>
+                <td>3 张券模板</td>
+                <td>50</td>
+                <td>876</td>
+                <td><span class="state ended">已结束</span></td>
+                <td class="ops"><a>查看</a><a>复制</a><a>查看数据</a></td>
+              </tr>
+              <tr>
+                <td>520 膨胀回馈（待发布）<br/><span style="color:var(--muted);font-size:12px;">ID: 1262811376880975875</span></td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td><span class="state draft">待发布</span></td>
+                <td class="ops"><a>编辑</a><a>发布</a><a>复制</a><a>删除</a></td>
+              </tr>
+              <tr>
+                <td>春分膨胀（已作废）<br/><span style="color:var(--muted);font-size:12px;">ID: 1262811376880975876</span></td>
+                <td>2026-03-20 ~ 2026-03-25</td>
+                <td>全部用户</td>
+                <td>1 张券模板</td>
+                <td>40</td>
+                <td>120</td>
+                <td><span class="state void">已作废</span></td>
+                <td class="ops"><a>查看</a><a>复制</a><a>查看数据</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PAGE 3: 活动数据 -->
+      <div class="page-wrap hide" id="page-data">
+        <div class="breadcrumb">
+          <a>营销中心</a><span class="sep">›</span>
+          <a>营销活动</a><span class="sep">›</span>
+          <span class="current">膨胀神券数据</span>
+        </div>
+        <h1 class="page-title">📊 膨胀神券数据</h1>
+
+        <div style="background: #fff; padding: 16px 20px; border-radius: 10px; margin-bottom: 18px; border: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="margin: 0 0 8px;">春日膨胀节</h3>
+            <div style="color: var(--muted); font-size: 13px;">ID: 1262811376880975872 · 2026-05-15 ~ 2026-05-31 · 进行中</div>
+          </div>
+          <button class="btn">切换活动</button>
+        </div>
+
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="t">命中券数 / 人数</div><div class="v">5,200 / 2,341</div><div class="d">活动期间累计；人数去重</div></div>
+          <div class="kpi-card"><div class="t">膨胀次数 / 人数</div><div class="v">876 / 876</div><div class="d">单券限 1 次；兜底入账不计入</div></div>
+          <div class="kpi-card"><div class="t">膨胀率</div><div class="v">16.8%</div><div class="d">膨胀次数 / 命中券数</div></div>
+          <div class="kpi-card"><div class="t">未膨胀流失数 / 流失率</div><div class="v">432 / 8.3%</div><div class="d">券到期 / 活动作废仍未膨胀</div></div>
+          <div class="kpi-card"><div class="t">核销次数 / 人数</div><div class="v">512 / 512</div><div class="d">已膨胀且核销 / 唯一用户</div></div>
+          <div class="kpi-card"><div class="t">核销率</div><div class="v">58.4%</div><div class="d">核销次数 / 膨胀次数</div></div>
+          <div class="kpi-card"><div class="t">核销金额</div><div class="v">¥ 3,478.50</div><div class="d">膨胀券抵扣总额</div></div>
+          <div class="kpi-card"><div class="t">带动消费金额</div><div class="v">¥ 23,894.20</div><div class="d">使用膨胀券订单原价合计</div></div>
+          <div class="kpi-card"><div class="t">兜底入账数</div><div class="v">8</div><div class="d">接口失败/超时按原面值入账（不计入膨胀次数）</div></div>
+        </div>
+
+        <div style="background: #fff; padding: 24px; border-radius: 10px; border: 1px solid var(--line);">
+          <h3 style="margin: 0 0 16px;">膨胀后面额分布</h3>
+          <table class="form-table">
+            <thead>
+              <tr><th>膨胀后面额区间</th><th>命中次数</th><th>实际占比</th><th>配置概率</th><th>偏差</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>¥5.01 ~ ¥6.00</td><td>304</td><td>34.7%</td><td>35%</td><td style="color:#16a34a;">-0.3%</td></tr>
+              <tr><td>¥6.01 ~ ¥7.00</td><td>352</td><td>40.2%</td><td>40%</td><td style="color:#16a34a;">+0.2%</td></tr>
+              <tr><td>¥7.01 ~ ¥8.00</td><td>220</td><td>25.1%</td><td>25%</td><td style="color:#16a34a;">+0.1%</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 膨胀明细（并入活动数据页，对应 PRD §三.1.3.2）-->
+        <h3 class="section-title mt" style="margin-top: 32px;">膨胀明细</h3>
+
+        <div class="list-toolbar">
+          <div class="filter-item">
+            <label>用户：</label>
+            <input class="input medium" placeholder="ID 或昵称" />
+          </div>
+          <div class="filter-item">
+            <label>券模板：</label>
+            <select class="input medium">
+              <option>全部</option>
+              <option>满 35 减 5 元-周年庆</option>
+              <option>5 元无门槛代金券</option>
+            </select>
+          </div>
+          <div class="filter-item">
+            <label>膨胀时间：</label>
+            <input class="input" type="date" style="width:140px;" />
+            <span style="color:var(--subtext);">至</span>
+            <input class="input" type="date" style="width:140px;" />
+          </div>
+          <div class="filter-item">
+            <label>核销状态：</label>
+            <select class="input" style="width:120px;">
+              <option>全部</option>
+              <option>已核销</option>
+              <option>未核销</option>
+              <option>已过期</option>
+            </select>
+          </div>
+          <button class="btn primary">查询</button>
+          <button class="btn">重置</button>
+          <div style="margin-left: auto;">
+            <button class="btn primary">⬇ 导出 Excel</button>
+          </div>
+        </div>
+
+        <div class="list-table">
+          <table>
+            <thead>
+              <tr>
+                <th>用户</th>
+                <th>券模板</th>
+                <th>券实例 ID</th>
+                <th>原券面额</th>
+                <th>膨胀后面额</th>
+                <th>膨胀来源活动</th>
+                <th>膨胀时间</th>
+                <th>核销状态</th>
+                <th>核销订单</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>U10086****<br/><span style="color:var(--muted);font-size:12px;">小明的奶茶</span></td>
+                <td>满 35 减 5 元-周年庆<br/><span style="color:var(--muted);font-size:12px;">CPN10086</span></td>
+                <td><span style="color:var(--muted);font-size:12px;">CPI-1845720193</span></td>
+                <td>¥ 5.00</td>
+                <td style="color:var(--brand);font-weight:600;">¥ 6.90</td>
+                <td>春日膨胀节</td>
+                <td>2026-05-20 14:36:12</td>
+                <td><span class="badge-status used">已核销</span></td>
+                <td>ORD-2026052014522<br/><span style="color:var(--muted);font-size:12px;">2026-05-20 15:02:08</span></td>
+                <td class="ops"><a>查看订单</a></td>
+              </tr>
+              <tr>
+                <td>U20231****<br/><span style="color:var(--muted);font-size:12px;">咖啡爱好者</span></td>
+                <td>5 元无门槛代金券<br/><span style="color:var(--muted);font-size:12px;">CPN10088</span></td>
+                <td><span style="color:var(--muted);font-size:12px;">CPI-1845720194</span></td>
+                <td>¥ 5.00</td>
+                <td style="color:var(--brand);font-weight:600;">¥ 8.50</td>
+                <td>春日膨胀节</td>
+                <td>2026-05-20 15:12:44</td>
+                <td><span class="badge-status used">已核销</span></td>
+                <td>ORD-2026052015234<br/><span style="color:var(--muted);font-size:12px;">2026-05-20 15:30:55</span></td>
+                <td class="ops"><a>查看订单</a></td>
+              </tr>
+              <tr>
+                <td>U30491****<br/><span style="color:var(--muted);font-size:12px;">外卖大户</span></td>
+                <td>满 35 减 5 元-周年庆<br/><span style="color:var(--muted);font-size:12px;">CPN10086</span></td>
+                <td><span style="color:var(--muted);font-size:12px;">CPI-1845720195</span></td>
+                <td>¥ 5.00</td>
+                <td style="color:var(--brand);font-weight:600;">¥ 5.30</td>
+                <td>春日膨胀节</td>
+                <td>2026-05-21 08:21:09</td>
+                <td><span class="badge-status unused">未核销</span></td>
+                <td>—</td>
+                <td class="ops"><a style="color:var(--muted);cursor:not-allowed;">查看订单</a></td>
+              </tr>
+              <tr>
+                <td>U50882****<br/><span style="color:var(--muted);font-size:12px;">老熟客</span></td>
+                <td>满 35 减 5 元-周年庆<br/><span style="color:var(--muted);font-size:12px;">CPN10086</span></td>
+                <td><span style="color:var(--muted);font-size:12px;">CPI-1845720196</span></td>
+                <td>¥ 5.00</td>
+                <td style="color:var(--brand);font-weight:600;">¥ 7.70</td>
+                <td>春日膨胀节</td>
+                <td>2026-05-18 19:55:30</td>
+                <td><span class="badge-status expired">已过期</span></td>
+                <td>—</td>
+                <td class="ops"><a style="color:var(--muted);cursor:not-allowed;">查看订单</a></td>
+              </tr>
+              <tr>
+                <td>U70015****<br/><span style="color:var(--muted);font-size:12px;">新人小白</span></td>
+                <td>5 元无门槛代金券<br/><span style="color:var(--muted);font-size:12px;">CPN10088</span></td>
+                <td><span style="color:var(--muted);font-size:12px;">CPI-1845720197</span></td>
+                <td>¥ 5.00</td>
+                <td style="color:var(--brand);font-weight:600;">¥ 9.20</td>
+                <td>春日膨胀节</td>
+                <td>2026-05-22 11:18:55</td>
+                <td><span class="badge-status used">已核销</span></td>
+                <td>ORD-2026052211234<br/><span style="color:var(--muted);font-size:12px;">2026-05-22 12:03:18</span></td>
+                <td class="ops"><a>查看订单</a></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div style="margin-top: 14px; text-align: right; color: var(--muted); font-size: 13px;">
+          共 876 条 · 当前第 1 页 · &lt; 1 2 3 ... 88 &gt;
+        </div>
+      </div>
+
+      <!-- PAGE 4: 券模板拦截弹窗（致命字段保存校验） -->
+      <div class="page-wrap hide" id="page-rule">
+        <div class="breadcrumb">
+          <a>营销中心</a><span class="sep">›</span>
+          <a>券中心</a><span class="sep">›</span>
+          <a>券模板</a><span class="sep">›</span>
+          <span class="current">编辑券模板</span>
+        </div>
+        <h1 class="page-title">🎟️ 编辑券模板</h1>
+
+        <div class="form-container">
+          <div class="form-col">
+            <h3 class="section-title">基本信息</h3>
+
+            <div class="form-row">
+              <div class="label required">券名称：</div>
+              <div class="control">
+                <input class="input" value="满 35 减 5 元-周年庆" />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">优惠类型：</div>
+              <div class="control">
+                <select class="input medium">
+                  <option>立减</option>
+                  <option selected style="color:#dc2626;">折扣 ← 商家正在改</option>
+                  <option>特价</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">优惠金额：</div>
+              <div class="control">
+                <div class="inline">
+                  <input class="input short" type="number" value="8" style="color:#dc2626;" />
+                  <span style="color:var(--subtext);">元 ← 原 5 元，商家改成 8 元</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">使用门槛：</div>
+              <div class="control">
+                <input class="input medium" value="满 35 元" disabled />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">适用商品：</div>
+              <div class="control">
+                <input class="input medium" value="全部商品" disabled />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">核销门店：</div>
+              <div class="control">
+                <input class="input medium" value="所有门店" disabled />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="label required">有效期：</div>
+              <div class="control">
+                <input class="input medium" value="领券当日起 30 日内可用" disabled />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bottom-bar">
+          <button class="btn">取消</button>
+          <button class="btn primary">保存</button>
+        </div>
+
+        <!-- 弹窗（默认显示，演示拦截效果） -->
+        <div class="modal-overlay">
+          <div class="modal-dialog">
+            <div class="modal-head">
+              <span class="icon">⚠️</span>
+              该券模板正参与 2 个膨胀活动
+            </div>
+            <div class="modal-body">
+              <ul>
+                <li>春日膨胀节（进行中）</li>
+                <li>520 膨胀回馈（待开始）</li>
+              </ul>
+              <div>修改<strong>优惠类型/金额</strong>会影响相关膨胀活动的活动规则，请先处理：</div>
+            </div>
+            <div class="modal-foot">
+              <button class="btn">取消</button>
+              <button class="btn">去处理膨胀活动</button>
+              <button class="btn primary">复制新券模板</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script>
+    function switchPage(page) {
+      ['create','list','data','rule'].forEach(p => {
+        document.getElementById('page-' + p).classList.add('hide');
+      });
+      document.getElementById('page-' + page).classList.remove('hide');
+      document.querySelectorAll('.page-switcher button').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+    function onUserTypeChange(val) {
+      document.getElementById('sub-card').classList.toggle('hide', val !== 'card');
+      document.getElementById('sub-level').classList.toggle('hide', val !== 'level');
+    }
+    function toggleChip(el) {
+      el.classList.toggle('selected');
+    }
+    function onDecimalChange(digits) {
+      // 联动所有膨胀区间输入框（不影响概率输入框）
+      const stepMap = { 0: '1', 1: '0.1', 2: '0.01' };
+      const rangeInputs = document.querySelectorAll('.range-inline-row .range-input');
+      rangeInputs.forEach((inp, idx) => {
+        // 每行 3 个输入框：[左区间, 右区间, 概率%]；前 2 个是金额，第 3 个是概率
+        const isAmount = (idx % 3) !== 2;
+        if (!isAmount) return;
+        inp.step = stepMap[digits];
+        const v = parseFloat(inp.value);
+        if (!isNaN(v)) {
+          inp.value = v.toFixed(digits);
+        }
+      });
+    }
+    function toggleTopPriority(cb) {
+      const input = document.getElementById('priority-input');
+      if (cb.checked) {
+        input.dataset.prev = input.value;
+        input.value = '';
+        input.placeholder = '最高';
+        input.disabled = true;
+        input.style.background = '#f5f6f8';
+        input.style.color = '#86909c';
+      } else {
+        input.value = input.dataset.prev || 50;
+        input.placeholder = '';
+        input.disabled = false;
+        input.style.background = '#fff';
+        input.style.color = '';
+      }
+    }
+  </script>
+</body>
+</html>
